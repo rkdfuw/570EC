@@ -1,0 +1,137 @@
+
+None selected 
+
+Skip to content
+Using UW Mail with screen readers
+in:sent 
+Meet
+New meeting
+My meetings
+Hangouts
+
+Conversations
+Using 0.37 GB
+Program Policies
+Powered by Google
+Last account activity: 22 minutes ago
+Details
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Feb 20 15:14:30 2022
+
+@author: RdelFierro
+"""
+
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv('Input_File.csv', encoding = "ISO-8859-1")
+df.head()
+
+#Make sure to not have any duplicates in the data
+df = df.groupby(['Time_Series','Object_Name']).agg({'Independent_Var':'mean','Dependent_Var':'mean'}).reset_index()
+df.head()
+
+
+#Format and build a dataframe with x_values for each iterated object
+x_pivot = df.pivot(index= 'Time_Series' ,columns='Object_Name', values='Independent_Var')
+x_values = pd.DataFrame(x_pivot.to_records())
+print(x_values)
+
+
+#Format and build a dataframe with y_values for each iterated object
+y_pivot = df.pivot( index = 'Time_Series',columns='Object_Name', values='Dependent_Var')
+y_values = pd.DataFrame(y_pivot.to_records())
+print(y_values)
+
+points = []
+results_values = {
+    "Object_Name": [],
+    "Dependent_Var_mean": [],
+    "Independent_Var_mean": [],
+    "Dependent_Var_weighted_average": [],
+    "Independent_Var_weighted_average": [],
+    "Dependent_Var_median": [],
+    "Independent_Var_median": [],
+    "Dependent_Var_min": [],
+    "Independent_Var_min": [],
+    "Dependent_Var_max": [],
+    "Independent_Var_max": [],
+    "Dependent_Var_std": [],
+    "Independent_Var_std": [],
+    "Dependent_Var_Variance": [],
+    "Independent_Var_Variance": [],
+    "intercept": [],
+    "t_score":[],
+    "slope": [],
+    "coefficient_pvalue" : [],
+    "rsquared" : [],
+}
+
+#Append x_values with y_values per same object name
+for column in x_values.columns[1:]:
+    column_points = []
+    for i in range(len(x_values[column])):
+        if not np.isnan(x_values[column][i]) and not np.isnan(y_values[column][i]):
+            column_points.append((x_values[column][i], y_values[column][i]))
+    df = pd.DataFrame(list(column_points), columns= ['x_value', 'y_value'])
+    
+    #Linear Regression Model
+    import statsmodels.api as sm
+    x_value = df['x_value']
+    y_value = df['y_value']
+    X = sm.add_constant(x_value)
+    model = sm.OLS(y_value, X)
+    result = model.fit()
+    
+    
+    #(Null Hypothesis test) Coefficient with a p value less than 0.05
+    if result.f_pvalue < 0.05:
+        
+        rsquared = result.rsquared
+        coefficient_pvalue = result.f_pvalue
+        intercept, slope = result.params
+        Independent_Var_mean = np.mean(x_value)
+        Dependent_Var_mean = np.mean(y_value)
+        Independent_Var_weighted_average = np.average(x_value)
+        Dependent_Var_weighted_average = np.average(y_value)
+        Independent_Var_median = np.median(x_value)
+        Dependent_Var_median = np.median(y_value)
+        Independent_Var_min = np.min(x_value)
+        Dependent_Var_min = np.min(y_value)
+        Independent_Var_max = np.max(x_value)
+        Dependent_Var_max = np.max(y_value)
+        Independent_Var_std = np.std(x_value)
+        Dependent_Var_std = np.std(y_value)
+        Independent_Var_Variance = np.var(x_value)
+        Dependent_Var_Variance = np.var(y_value)
+        tintercept, t_score = result.tvalues
+                
+        #Append results into dictionary for dataframe
+        results_values["Object_Name"].append(column)
+        results_values["Dependent_Var_mean"].append(Dependent_Var_mean)
+        results_values["Independent_Var_mean"].append(Independent_Var_mean)
+        results_values["Dependent_Var_weighted_average"].append(Dependent_Var_weighted_average)
+        results_values["Independent_Var_weighted_average"].append(Independent_Var_weighted_average)
+        results_values["Dependent_Var_median"].append(Dependent_Var_median)
+        results_values["Independent_Var_median"].append(Independent_Var_median)
+        results_values["Dependent_Var_min"].append(Dependent_Var_min)
+        results_values["Independent_Var_min"].append(Independent_Var_min)
+        results_values["Dependent_Var_max"].append(Dependent_Var_max)
+        results_values["Independent_Var_max"].append(Independent_Var_max)
+        results_values["Dependent_Var_std"].append(Dependent_Var_std)
+        results_values["Independent_Var_std"].append(Independent_Var_std)
+        results_values["Dependent_Var_Variance"].append(Dependent_Var_Variance)
+        results_values["Independent_Var_Variance"].append(Independent_Var_Variance)
+        results_values["intercept"].append(intercept)
+        results_values['t_score'].append(t_score)
+        results_values["slope"].append(slope)
+        results_values["coefficient_pvalue"].append(coefficient_pvalue)
+        results_values["rsquared"].append(rsquared)
+
+
+final_df = pd.DataFrame.from_dict(results_values)
+df = final_df[['Object_Name','t_score','coefficient_pvalue','slope','intercept','rsquared','Dependent_Var_mean','Dependent_Var_median','Dependent_Var_min','Dependent_Var_max','Dependent_Var_weighted_average','Dependent_Var_std','Dependent_Var_Variance','Independent_Var_mean','Independent_Var_median','Independent_Var_min','Independent_Var_max','Independent_Var_weighted_average','Independent_Var_std','Independent_Var_Variance']]
+df.to_excel(r'PLACE OUTPUT DIRECTORY HERE',index = False, header = True)
+MSIM_Stat_EC.py
+Displaying MSIM_Stat_EC.py.
